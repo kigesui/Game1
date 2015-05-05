@@ -11,7 +11,7 @@
     <property name="build.tst.dir" location="${build.dir}/tst" />
     <property name="jar.dir" value="${build.dir}/jar"/>
 
-    <property name="tst.report.dir" location="${build.dir}/tstreport"/>
+    <property name="tst.report.dir" location="${build.dir}/junitreport"/>
 
     <property name="main-class" value="com.kigesui.main.Driver"/>
 
@@ -71,6 +71,13 @@
             </batchtest>
         </junit>
         <echo>JUNIT END</echo>
+    </target>
+
+    <target name="junitreport">
+        <junitreport todir="${tst.report.dir}">
+            <fileset dir="${tst.report.dir}" includes="TEST-*.xml"/>
+            <report todir="${tst.report.dir}"/>
+        </junitreport>
     </target>
 
     <target name="run" depends="jar">
