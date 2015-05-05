@@ -2,13 +2,29 @@
 <project name="MyProject" basedir="." default="main">
 
     <property name="src.dir" value="src"/>
+    <property name="tst.dir" value="tst"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="config.dir" value="configuration"/>
 
     <property name="build.dir" value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="build.tst.dir" location="${build.dir}/tst" />
     <property name="jar.dir" value="${build.dir}/jar"/>
+
+    <property name="tst.report.dir" location="${build.dir}/tstreport"/>
 
     <property name="main-class" value="com.kigesui.main.Driver"/>
 
+    <path id="libs.path">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+    <path id="app.path" location="${jar.dir}/${ant.project.name}.jar"/>
+
+    <path id="junit.class.path">
+        <pathelement location="lib/junit-4.12.jar"/>
+        <pathelement location="lib/hamcrest-core-1.3.jar"/>
+    </path>
 
     <target name="clean">
         <delete dir="${build.dir}"/>
@@ -16,23 +32,54 @@
 
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
-        <echo>Compilation Success!</echo>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="libs.path" includeantruntime="false"/>
+        <copy todir="${classes.dir}">
+            <fileset dir="${config.dir}" excludes="**/*.java"/>
+        </copy>
     </target>
 
     <target name="jar" depends="compile">
         <mkdir dir="${jar.dir}"/>
-        <jar destfile="${jar.dir}/${ant.project.name}" basedir="${classes.dir}">
+        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
             <manifest>
                 <attribute name="Main-Class" value="${main-class}"/>
             </manifest>
         </jar>
-        <echo>Building Jar Success!</echo>
+    </target>
+
+    <target name="junit" depends="jar">
+        <echo>JUNIT START</echo>
+        <mkdir dir="${build.tst.dir}"/>
+        <mkdir dir="${tst.report.dir}"/>
+        <javac srcdir="${tst.dir}" destdir="${build.tst.dir}" includeantruntime="false">
+            <classpath refid="libs.path"/>
+            <classpath location="${classes.dir}"/>
+        </javac>
+        <junit printsummary="on" fork="true" haltonfailure="yes">
+            <classpath>
+                <path refid="libs.path"/>
+                <path refid="app.path"/>
+                <path refid="junit.class.path"/>
+            </classpath>
+            <classpath location="${build.tst.dir}"/>
+            <formatter type="plain"/>
+            <formatter type="xml"/>
+            <batchtest fork="yes" todir="${tst.report.dir}">
+                <fileset dir="${tst.dir}">
+                    <include name="**/*Test*.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+        <echo>JUNIT END</echo>
     </target>
 
     <target name="run" depends="jar">
-        <java jar="${jar.dir}/${ant.project.name}" fork="true"/>
-        <echo>Run Success!</echo>
+        <java fork="true" classname="${main-class}">
+            <classpath>
+                <path refid="libs.path"/>
+                <path refid="app.path"/>
+            </classpath>
+        </java>
     </target>
 
     <target name="clean-build" depends="clean,jar"/>
